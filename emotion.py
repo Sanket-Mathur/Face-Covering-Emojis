@@ -46,7 +46,7 @@ class Emotions:
             predictions = self.model.predict(img_arr)  
             pred = np.argmax(predictions[0])
             self.place_emoji(pred, x, y, w, h)
-            return pred        
+        return pred        
 
     def overlay_image_alpha(self, img, img_overlay, x, y, alpha_mask):
         """Overlay `img_overlay` onto `img` at (x, y) and blend using `alpha_mask`.
