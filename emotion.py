@@ -1,14 +1,15 @@
-import os  
-import cv2  
-import numpy as np  
+import os
+import sys
+import cv2
+import numpy as np
 from PIL import Image
-from keras.models import model_from_json  
-from keras.preprocessing import image  
+from keras.models import model_from_json
+from keras.preprocessing import image
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1" # to ignore initialization of GPU
 
 class Emotions:
-    def __init__(self):
+    def __init__(self, l):
         """ loading the models, weights and haarcascades; occupying the input resource i.e the default camera and some other configurations """
         self.model = model_from_json(open("Models/fer.json", 'r').read())
         self.model.load_weights('Models/fer.h5')
@@ -18,7 +19,9 @@ class Emotions:
         self.cap = cv2.VideoCapture(0)
 
         self.emo_list = ['blur', 'normal', 'cartoon', 'anime']
-        self.emo_style = 0
+        self.emo_style = l[0] % 4
+        self.ind1 = l[1]
+        self.ind2 = l[2]
     
     def run(self):
         """ the main application loop of the software """
@@ -32,10 +35,13 @@ class Emotions:
 
             if len(faces_detected):
                 pred = self.predict(faces_detected, gray)
-                cv2.putText(self.img, self.lookup[pred], (500,25), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 2)
+                if self.ind2:
+                    cv2.putText(self.img, self.lookup[pred], (500,25), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 2)
             else:
-                cv2.putText(self.img, 'NULL', (500,25), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 2)
-                self.place_predbar([0,0,0,0,0,0,0])
+                if self.ind2:
+                    cv2.putText(self.img, 'NULL', (500,25), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 2)
+                if self.ind1:
+                    self.place_predbar([0,0,0,0,0,0,0])
             
             self.img = cv2.resize(self.img, (1000,700))
             cv2.imshow('Face Covering with Emotion Detection', self.img)
@@ -45,6 +51,10 @@ class Emotions:
                 break
             elif key == ord('c'):
                 self.emo_style = (self.emo_style+1) % 4
+            elif key == ord('n'):
+                self.ind1 = 0 if self.ind1 else 1
+            elif key == ord('m'):
+                self.ind2 = 0 if self.ind2 else 1
     
     def predict(self, faces, gray):
         """ Converts the image to an array and predicts the emotion """
@@ -56,7 +66,8 @@ class Emotions:
             predictions = self.model.predict(img_arr)  
             pred = np.argmax(predictions[0])
             self.place_emoji(pred, x, y, w, h)
-            self.place_predbar(predictions[0])
+            if self.ind1:
+                self.place_predbar(predictions[0])
         return pred        
 
     def overlay_image_alpha(self, img, img_overlay, x, y, alpha_mask):
@@ -107,7 +118,9 @@ class Emotions:
         cv2.destroyAllWindows()
 
 def main():
-    o = Emotions()
+    print(sys.argv)
+    l = list(map(int, sys.argv[1:])) if len(sys.argv) > 1 else [0,0,0]
+    o = Emotions(l)
     o.run()
     del o
 
