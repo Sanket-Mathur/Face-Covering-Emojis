@@ -7,6 +7,7 @@ from keras.models import model_from_json
 from keras.preprocessing import image
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1" # to ignore initialization of GPU
+WINDOWNAME = 'Face Covering with Emotion Detection'
 
 class Emotions:
     def __init__(self, l):
@@ -18,8 +19,8 @@ class Emotions:
         self.haar_cascade = cv2.CascadeClassifier('Models/haarcascade_frontalface_default.xml')
         self.cap = cv2.VideoCapture(0)
 
-        self.emo_list = ['blur', 'normal', 'cartoon', 'anime']
-        self.emo_style = l[0] % 4
+        self.emo_list = ['blur', 'normal', 'cartoon', 'anime', 'food']
+        self.emo_style = l[0] % 5
         self.ind1 = l[1]
         self.ind2 = l[2]
     
@@ -31,30 +32,31 @@ class Emotions:
                 continue
 
             gray = cv2.cvtColor(self.img, cv2.COLOR_BGR2GRAY)  
-            faces_detected = self.haar_cascade.detectMultiScale(gray, 1.32, 5)
-
+            faces_detected = self.haar_cascade.detectMultiScale(gray, 1.32, 5) # detect faces using haar cascade
             if len(faces_detected):
-                pred = self.predict(faces_detected, gray)
-                if self.ind2:
-                    cv2.putText(self.img, self.lookup[pred], (500,25), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 2)
+                pred, conf = self.predict(faces_detected, gray)
+                emo = self.lookup[pred]
             else:
-                if self.ind2:
-                    cv2.putText(self.img, 'NULL', (500,25), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 2)
-                if self.ind1:
-                    self.place_predbar([0,0,0,0,0,0,0])
+                emo = 'NULL'
+                conf = [0] * 7
+            
+            if self.ind2: # place decision indicator if set to 'ON'
+                cv2.putText(self.img, emo, (500,25), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 2)
+            if self.ind1: # place confidence indicator if set to 'ON'
+                self.place_predbar(conf)
             
             self.img = cv2.resize(self.img, (1000,700))
-            cv2.imshow('Face Covering with Emotion Detection', self.img)
+            cv2.imshow(WINDOWNAME, self.img)
 
             key = cv2.waitKey(10)
-            if key == ord('q'):
+            if key == ord('q'): # exit on 'q'
                 break
-            elif key == ord('c'):
-                self.emo_style = (self.emo_style+1) % 4
-            elif key == ord('n'):
-                self.ind1 = 0 if self.ind1 else 1
-            elif key == ord('m'):
-                self.ind2 = 0 if self.ind2 else 1
+            elif key == ord('c'): # change style on 'c'
+                self.emo_style = (self.emo_style + 1) % 5
+            elif key == ord('n'): # confidence indicator on 'n'
+                self.ind1 = (self.ind1 + 1) % 2
+            elif key == ord('m'): # decision indicator on 'm'
+                self.ind2 = (self.ind2 + 1) % 2
     
     def predict(self, faces, gray):
         """ Converts the image to an array and predicts the emotion """
@@ -66,9 +68,7 @@ class Emotions:
             predictions = self.model.predict(img_arr)  
             pred = np.argmax(predictions[0])
             self.place_emoji(pred, x, y, w, h)
-            if self.ind1:
-                self.place_predbar(predictions[0])
-        return pred        
+        return pred, predictions[0]   
 
     def overlay_image_alpha(self, img, img_overlay, x, y, alpha_mask):
         """ Overlay `img_overlay` onto `img` at (x, y) and blend using `alpha_mask`. `alpha_mask` must have same HxW as `img_overlay` and values in range [0, 1] """
@@ -103,7 +103,7 @@ class Emotions:
 
             self.img = cv2.cvtColor(np.array(img_result), cv2.COLOR_RGB2BGR)
         else:
-            self.img[y-20:y+h+20, x-20:x+w+20] = cv2.GaussianBlur(self.img[y-20:y+h+20, x-20:x+w+20], (151,151), 0)
+            self.img[y-20:y+h+20, x-20:x+w+20] = cv2.GaussianBlur(self.img[y-20:y+h+20, x-20:x+w+20], (121,121), 0)
 
     def place_predbar(self, predictions):
         """ drawing the bar representing the prediction confidence given for each from """
