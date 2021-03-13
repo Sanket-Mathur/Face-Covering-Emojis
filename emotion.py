@@ -19,8 +19,8 @@ class Emotions:
         self.haar_cascade = cv2.CascadeClassifier('Models/haarcascade_frontalface_default.xml')
         self.cap = cv2.VideoCapture(0)
 
-        self.emo_list = ['blur', 'normal', 'cartoon', 'anime', 'food']
-        self.emo_style = l[0] % 5
+        self.emo_list = ['blur', 'normal', 'cartoon', 'anime', 'food', 'traffic']
+        self.emo_style = l[0] % 6
         self.ind1 = l[1]
         self.ind2 = l[2]
     
@@ -40,19 +40,16 @@ class Emotions:
                 emo = 'NULL'
                 conf = [0] * 7
             
-            if self.ind2: # place decision indicator if set to 'ON'
-                cv2.putText(self.img, emo, (500,25), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 2)
-            if self.ind1: # place confidence indicator if set to 'ON'
-                self.place_predbar(conf)
+            self.place_indicators(emo, conf)
             
             self.img = cv2.resize(self.img, (1000,700))
             cv2.imshow(WINDOWNAME, self.img)
 
             key = cv2.waitKey(10)
-            if key == ord('q'): # exit on 'q'
+            if (cv2.getWindowProperty(WINDOWNAME, cv2.WND_PROP_VISIBLE) < 1) or key == ord('q'): # exit on 'q' or cross or if window isn't visibe
                 break
             elif key == ord('c'): # change style on 'c'
-                self.emo_style = (self.emo_style + 1) % 5
+                self.emo_style = (self.emo_style + 1) % 6
             elif key == ord('n'): # confidence indicator on 'n'
                 self.ind1 = (self.ind1 + 1) % 2
             elif key == ord('m'): # decision indicator on 'm'
@@ -87,6 +84,13 @@ class Emotions:
         alpha_inv = 1.0 - alpha
 
         img_crop[:] = alpha * img_overlay_crop + alpha_inv * img_crop
+    
+    def place_indicators(self, emo, conf):
+        """ placing the indicators depending on their status """
+        if self.ind2: # place decision indicator if set to 'ON'
+            cv2.putText(self.img, emo, (500,25), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 2)
+        if self.ind1: # place confidence indicator if set to 'ON'
+            self.place_predbar(conf)
 
     def place_emoji(self, pred, x, y, w, h):
         """ overlaying the emoji on the image of the user in order to cover his identity """
