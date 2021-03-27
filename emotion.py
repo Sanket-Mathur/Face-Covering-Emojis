@@ -23,6 +23,9 @@ class Emotions:
         self.emo_style = l[0] % 6
         self.ind1 = l[1]
         self.ind2 = l[2]
+
+        self.record = False # recording is turned off by default
+        self.video_writer = False
     
     def run(self):
         """ the main application loop of the software """
@@ -43,6 +46,9 @@ class Emotions:
             self.place_indicators(emo, conf)
             
             self.img = cv2.resize(self.img, (1000,700))
+            if self.record:
+                self.video_writer.write(self.img)
+                self.place_record()
             cv2.imshow(WINDOWNAME, self.img)
 
             key = cv2.waitKey(10)
@@ -54,6 +60,10 @@ class Emotions:
                 self.ind1 = (self.ind1 + 1) % 2
             elif key == ord('m'): # decision indicator on 'm'
                 self.ind2 = (self.ind2 + 1) % 2
+            elif key == ord('r'):
+                if not self.video_writer:
+                    self.init_recorder()
+                self.record = True if not self.record else False
     
     def predict(self, faces, gray):
         """ Converts the image to an array and predicts the emotion """
@@ -85,6 +95,14 @@ class Emotions:
 
         img_crop[:] = alpha * img_overlay_crop + alpha_inv * img_crop
     
+    def init_recorder(self):
+        """ initialize the output file in Videos folder and make sure that a Videos folder exists before doing so"""
+        if not os.path.exists('Videos/'):
+            os.makedirs('Videos/')
+        fourcc = cv2.VideoWriter_fourcc(*'mpeg')
+        self.video_writer = cv2.VideoWriter()
+        self.video_writer.open(os.path.join('Videos','output.mp4'), fourcc, 10, (1000,700), True)
+    
     def place_indicators(self, emo, conf):
         """ placing the indicators depending on their status """
         if self.ind2: # place decision indicator if set to 'ON'
@@ -115,6 +133,11 @@ class Emotions:
             cv2.putText(self.img, self.lookup[i], (10,20*(i+1)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,255), 2)
             cv2.rectangle(self.img, (80, 10+(20*i)), (180, 20*(i+1)), (0, 255, 0), 2)
             cv2.rectangle(self.img, (80, 10+(20*i)), (int(80 + predictions[i]*100), 20*(i+1)), (0, 255, 0), -1)
+    
+    def place_record(self):
+        """ drawing the recording symbol and text onto the screen when recording is turned on """
+        self.img = cv2.circle(self.img, (500,50), 10, (0,0,255), -1)
+        cv2.putText(self.img, 'REC', (520,55), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255,255,255), 2)
 
     def __del__(self):
         """ destroying the window and releasing the occupied resources """
