@@ -3,6 +3,7 @@ import sys
 import cv2
 import numpy as np
 from PIL import Image
+from datetime import datetime as dt
 from keras.models import model_from_json
 from keras.preprocessing import image
 
@@ -31,7 +32,7 @@ class Emotions:
         """ the main application loop of the software """
         while True:
             ret, self.img = self.cap.read()
-            if not ret:
+            if not ret or np.shape(self.img) == ():
                 continue
 
             gray = cv2.cvtColor(self.img, cv2.COLOR_BGR2GRAY)  
@@ -99,10 +100,17 @@ class Emotions:
         """ initialize the output file in Videos folder and make sure that a Videos folder exists before doing so"""
         if not os.path.exists('Videos/'):
             os.makedirs('Videos/')
+
+        time = str(dt.now())[:19]
+        time = time.replace(' ', '_')
+        time = time.replace(':', '')
+        time = time.replace('-', '')
+        name = time + '.mp4'
+
         fourcc = cv2.VideoWriter_fourcc(*'mpeg')
         self.video_writer = cv2.VideoWriter()
-        self.video_writer.open(os.path.join('Videos','output.mp4'), fourcc, 10, (1000,700), True)
-    
+        self.video_writer.open(os.path.join('Videos', name), fourcc, 10, (1000,700), True)
+
     def place_indicators(self, emo, conf):
         """ placing the indicators depending on their status """
         if self.ind2: # place decision indicator if set to 'ON'
@@ -117,6 +125,8 @@ class Emotions:
             img_pil = np.array(Image.fromarray(img_cvt))
 
             emoji = np.array(Image.open('Emojis/' + self.emo_list[self.emo_style] + '/' + self.lookup[pred] +'.png').resize((w+40, h+40)))
+            if emoji.shape == ():
+                return
 
             alpha_mask = emoji[:, :, 3] / 255.0
             img_result = img_pil[:, :, :3].copy()
