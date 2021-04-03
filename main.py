@@ -3,11 +3,15 @@ import os
 
 class Ui_MainWindow(object):
     def __init__(self):
+        """ Constructor initializing the default values of the arguments to be passed while calling the Emotion funtion as command line arguments """
+
         self.ind1 = False
         self.ind2 = False
         self.type = 0
     
     def setupUi(self, MainWindow):
+        """ Setup of the UI which includes creation of UI elements, disign and positioning and linking to their respective functionality """
+
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(487, 450)
         font = QtGui.QFont()
@@ -267,6 +271,7 @@ class Ui_MainWindow(object):
         self.options.activated[str].connect(self.changeType)
 
     def retranslateUi(self, MainWindow):
+        """ Setting up the text that is to be displayed on the elements of the UI """
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
         self.options.setItemText(0, _translate("MainWindow", "Blur"))
@@ -284,22 +289,30 @@ class Ui_MainWindow(object):
         self.actionOff.setText(_translate("MainWindow", "Off"))
     
     def changeType(self, text):
+        """ Changes type of emojis by selecting the index corresponding to the text selected """
+
         l = ['Blur', 'Basic Emojis', 'Cartoon Emojis', 'Animated Emojis', 'Food Emojis', 'Traffic Sign Emojis']
         self.type = l.index(text)
 
     def change1(self, state):
+        """ Change in the toggle state of the confidence indicator """
+
         if state == QtCore.Qt.Checked:
             self.ind1 = True 
         else:
             self.ind1 = False 
     
     def change2(self, state):
+        """ Change in the toggle state of the prediction indicator """
+
         if state == QtCore.Qt.Checked:
             self.ind2 = True 
         else:
             self.ind2 = False 
 
     def deploy(self):
+        """ Deployment of the main application of the program by executing the command """
+
         command = list('python3 emotion.py ' + str(self.type) +' 0 0')
         if self.ind1:
             command[21] = '1'
