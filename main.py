@@ -1,5 +1,6 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 import os
+import runpy
 
 class Ui_MainWindow(object):
     def __init__(self):
@@ -311,14 +312,10 @@ class Ui_MainWindow(object):
             self.ind2 = False 
 
     def deploy(self):
-        """ Deployment of the main application of the program by executing the command """
+        """ Deployment of the main application of the program by executing the python file """
 
-        command = list('python3 emotion.py ' + str(self.type) +' 0 0')
-        if self.ind1:
-            command[21] = '1'
-        if self.ind2:
-            command[23] = '1'
-        os.system(''.join(command))
+        sys.argv = ['', str(self.type), '1' if self.ind1 else '0', '1' if self.ind2 else '0']
+        runpy.run_path('./emotion.py', run_name='__main__')
 
 if __name__ == "__main__":
     import sys
